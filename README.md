@@ -1,191 +1,116 @@
-# End-to-End Text Summarizer Project
+# Document Summarizer
 
-## Introduction
+[Open the application](https://subhashdixit.github.io/document-summarizer/) · [Report an issue](https://github.com/subhashdixit/document-summarizer/issues)
 
-This project provides an end-to-end solution for text summarization using PyTorch. The repository includes setup instructions, usage details, and deployment guidelines using AWS and GitHub Actions.
+Turn text or a PDF into a traceable extractive summary, with optional server-side abstractive generation.
 
-## Installation and Setup
+## What the finished application does
 
-### Install PyTorch Locally
+- A complete HTML/JavaScript workflow with included example, file import, editable outputs and local export.
+- Local evidence/extraction mode with explicit algorithm labels.
+- Optional real Gemini generation through a credential-isolating Render gateway, enabled only after configuration and consent.
+- Input size limits, provider errors and source/citation checks shown in the UI.
 
-1. **Install PyTorch**:
-   - Visit the [PyTorch Installation Guide](https://pytorch.org/get-started/locally/) for the latest installation commands.
-   - Use the following command to install PyTorch with CUDA 11.8 support:
-     ```bash
-     pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-     ```
+## Use the application step by step
 
-2. **Install Visual Studio C++**:
-   - Download and install Visual Studio C++ from [Visual Studio](https://visualstudio.microsoft.com/vs/features/cplusplus/).
+1. Open the live application. Read the input labels and scope panel.
+2. Start with the included example to understand the output.
+3. Replace it with your own supported input. Files are processed locally unless you explicitly choose a server feature and consent to it.
+4. Run the analysis and inspect the visual output together with its limitations.
+5. Export your results when the tool offers a download. Keep your own copy; a browser tab is not a durable data store.
 
-### Resolve Import Errors
+## Concepts, algorithms and interpretation
 
-To fix the error "ImportError: Using the `Trainer` with `PyTorch` requires `accelerate>=0.21.0`," follow these steps:
+### Retrieval and generation have different jobs
 
-1. **Upgrade Accelerate**:
-   ```bash
-   pip install --upgrade accelerate
-   pip uninstall -y transformers accelerate
-   pip install transformers accelerate
-   ```
+Local BM25 ranks source excerpts using query-term rarity and document-length normalization (k1=1.2, b=0.75). It returns exact evidence and scores; a high lexical score is not an answer-confidence probability. An empty match means no evidence found. It cannot understand all paraphrases or resolve contradictory facts. Generation asks Gemini to write an answer from the supplied evidence; the gateway uses tool-specific instructions, no browsing/execution tools, low temperature and bounded output. An LLM may still hallucinate or follow malicious text, so source checking remains essential.
 
-## Project Configuration
+### Extraction and preprocessing
 
-### Update Configuration Files
+PDF.js reads selectable text page by page and preserves page markers. Scans have no guaranteed text layer. The local summarizer scores sentences by term frequency, normalized for length, and restores their original order. It copies source sentences rather than inventing an abstractive summary; it can miss rare but important details. OCR estimates characters from pixels and can misread punctuation, amounts and handwriting. Local invoice parsing is heuristic: missing fields remain null; subtotal + tax is compared with total, but discounts, shipping or multiple tax lines may require correction. Passing arithmetic does not authenticate an invoice.
 
-#### Update `config.yaml`
+### Provider boundaries
 
-- **Action**: Modify the `config.yaml` file to match your environment and project requirements.
-- **Purpose**: Ensures that the configuration settings are tailored to your specific setup and needs.
-
-#### Update `params.yaml`
-
-- **Action**: Adjust the parameters in the `params.yaml` file as needed.
-- **Purpose**: Allows you to fine-tune the parameters used in your project to optimize performance and functionality.
-
-#### Update Entity
-
-- **Action**: Review and update the entity definitions if necessary.
-- **Purpose**: Ensures that the data entities used in the project are correctly defined and aligned with your current project specifications.
-
-#### Update Configuration Manager
-
-- **Action**: Update the configuration manager in the `src/config` directory.
-- **Purpose**: Ensures that the configuration manager is correctly set up to handle configuration files and settings within the source code.
-
-#### Update Components
-
-- **Action**: Make changes to the components as required by the project.
-- **Purpose**: Adjust the project components to meet any new requirements or improvements.
-
-#### Update Pipeline
-
-- **Action**: Update the pipeline configuration to reflect any changes in the project setup.
-- **Purpose**: Ensures that the data processing and flow through the pipeline are up-to-date with the latest project configuration.
-
-#### Update `main.py`
-
-- **Action**: Apply any necessary changes to the `main.py` script.
-- **Purpose**: Ensures that the main script is updated to reflect recent changes in the project or its requirements.
-
-#### Update `app.py`
-
-- **Action**: Modify the `app.py` script according to project needs.
-- **Purpose**: Adjust the application script to align with any updates or new features in the project.
+The original obsolete PaLM/Gemini-pro code remains historical material. The maintained gateway uses a configurable current Gemini model. Keys stay in Render environment variables and never enter the Pages bundle. A present key is not proof of working quota or model access. If unavailable, the interface reports that honestly; local extraction/retrieval remains usable. No model-generated result is substituted with a pretend AI response.
 
 
-## How to Run
+## Architecture and data flow
 
-### Steps to Run Locally
+```mermaid
+flowchart LR
+  Input[Validated example or user input] --> Logic[Browser JavaScript engine]
+  Logic --> Charts[Accessible results and SVG charts]
+  Logic --> Export[Local downloadable results]
+  Git[Versioned main branch] --> CI[Formatting, lint and behavior tests]
+  CI --> Pages[Publish site only to GitHub Pages]
+```
 
-1. **Clone the Repository:**
+HTML provides the accessible page structure, CSS handles responsive layout, and ES modules separate calculation from user interaction. Pure calculation functions can run in Node tests without a browser. SVG charts scale with the screen; they use explicit axes, labels and legends. CSV exports escape spreadsheet formula prefixes in text cells.
 
-    ```bash
-    git clone https://github.com/subhashdixit/end_to_end_text_summarization_project
-    ```
+### Optional Render gateway
 
-2. **Create and Activate virtual Environment:**
+The shared service source is versioned in [ai-research-workbench/backend](https://github.com/subhashdixit/ai-research-workbench/tree/main/backend). All seven portfolio AI interfaces can use the same small gateway; each keeps its own UI and local logic. `site/config.json` contains only its public URL, never a secret. For independent hosting, clone that backend repository, run its tests and deploy its `render.yaml`; point this app's config at your URL. Configure `ALLOWED_ORIGINS` to your Pages origin.
 
-    ```bash
-    ""python3.10 version path"" -m venv venv
-    .\venv\Scripts\activate
-    ```
+On Render use the **Free** plan and set `GEMINI_API_KEY` directly in Environment, plus optional `GEMINI_MODEL`. Never paste keys into issues, source or browser JavaScript. Check `/health/ready`, then a real consented request before claiming provider generation works. Health exposes only a configured boolean. Free Render instances can sleep and share workspace runtime allowances; model providers have their own quotas and terms. No always-on or permanent-free guarantee is implied.
 
-3. **Install the Requirements:**
+The gateway rate-limits clients, caps global calls, allows two concurrent requests and rejects oversized inputs. These are demo limits, not a distributed billing firewall or an authentication system. No prompts/images/outputs are stored by its application code. Normal hosting/provider connection logs and provider data policies still apply. A fork should review those policies before accepting sensitive data.
 
-    ```bash
-    pip install -r requirements.txt
-    ```
 
-4. **Run the Application:**
+## Run locally from scratch
 
-    ```bash
-    python app.py
-    ```
+Install Node.js 22 and Python 3 for a local static HTTP server. Python is not a production backend for this app.
 
-5. **Access the Application:**
+```bash
+git clone https://github.com/subhashdixit/document-summarizer.git
+cd document-summarizer
+npm ci
+npm test
+npm run lint
+npm run format
+npm run check
+python3 -m http.server 8000 --directory site
+```
 
-    Open your web browser and navigate to the local host and port where the application is running.
+Open http://localhost:8000. Use HTTP rather than double-clicking HTML so that module imports and local data fetches work consistently. No production API secret belongs in `site/`.
 
-### Steps for AWS CI/CD Deployment with GitHub Actions
+## Coding structure
 
-#### AWS Setup
+```text
+site/
+  index.html       # accessible application interface
+  styles.css       # responsive design
+  app.js           # interface orchestration
+  engine.js        # validated calculations; no DOM dependency
+  ui.js            # chart, CSV and download helpers
+tests/             # behavior and boundary cases
+.github/workflows/pages.yml
+archive/           # original README and retired workflows where present
+```
 
-1. **Login to AWS Console**
-   - Access your AWS Management Console using your AWS credentials.
+Original source files, notebooks and historical artifacts remain in the repository for comparison. The release publishes only `site/`; old source directories and datasets are not automatically exposed by the application.
 
-2. **Create IAM User for Deployment**
-   - **Create User**:
-     - Go to the IAM service and create a new user for deployment.
-     - Assign the following access permissions:
-       - **EC2 Access**: Allows access to EC2 virtual machines.
-       - **ECR Access**: Allows saving Docker images to ECR.
-     - **AWS Policies**:
-       - **AmazonEC2ContainerRegistryFullAccess**
-       - **AmazonEC2FullAccess**
-   - **Create Access Key**:
-     - Navigate to the **Security credentials** tab of the IAM user.
-     - Create an access key to use in your GitHub Actions workflow.
+## CI/CD and deployment
 
-   - **Deployment Steps**:
-     1. **Build Docker Image**
-        - Create a Docker image from your source code using a Dockerfile.
+CI means continuous integration: each pull request and main-branch push installs exact lockfile dependencies, checks formatting, lints JavaScript, runs meaningful behavior tests and checks module syntax. A failed check stops publishing. CD means continuous deployment: after the required `Build and test` check succeeds on `main`, GitHub Actions uploads `site/` and GitHub Pages serves it over HTTPS.
 
-     2. **Push Docker Image to ECR**
-        - Push the Docker image to Amazon ECR (Elastic Container Registry).
+The workflow uses pinned action revisions, minimal permissions and a protected main branch. Publishing jobs need Pages/OIDC permissions; test jobs only read source. Feature branches are deleted after merge. Static Pages hosting needs no always-running Python process, but cannot hide secrets, host a Flask process or provide durable server storage.
 
-     3. **Launch EC2 Instance**
-        - Launch an EC2 instance where the Docker container will be deployed.
+To set up a fork, enable GitHub Pages with **GitHub Actions** as its source and allow the repository's workflow to run. Repository Settings → Pages shows the deployment URL. If renaming the repository, update the README URL and any absolute links; application resources use relative paths. Check Actions logs if publishing fails.
 
-     4. **Pull Docker Image on EC2**
-        - Pull the Docker image from ECR to the EC2 instance.
+### Release, monitoring and rollback
 
-     5. **Run Docker Container on EC2**
-        - Run the Docker container on the EC2 instance to start the application.
+A commit identifies exactly which source was deployed. Inspect the Actions deployment and test results before sharing the link. After publishing, open the page, run its example and check exports; a successful HTTP response alone is not a functional test. For rollback, revert the faulty merge in a new PR, pass checks, and merge the revert. This triggers the same reproducible publishing process. Avoid force-pushing protected main or deleting history. Browser caches can retain an older asset briefly; refresh after a deployment.
 
-#### Create ECR Repository
+### Docker and alternatives
 
-3. **Create ECR Repository**
-   - Create an ECR repository to store your Docker image.
-   - Save the repository URI: `276333489749.dkr.ecr.ap-south-1.amazonaws.com/textsummarization`
+Docker packages code and dependencies into a reproducible runtime. This static app does not require a container: Pages serves the same versioned files directly, with less operating work and no container cold starts. A container becomes useful if adding a Python backend; then secrets, patches, resource costs and persistent storage require separate management.
 
-#### Set Up EC2 Machine
+## Data provenance and attribution
 
-4. **Open EC2 and Install Docker**
-   - **Optional**: Update and upgrade the EC2 instance.
-     ```bash
-     sudo apt-get update -y
-     sudo apt-get upgrade
-     ```
-   - **Required**: Install Docker on the EC2 instance.
-     ```bash
-     curl -fsSL https://get.docker.com -o get-docker.sh
-     sudo sh get-docker.sh
-     sudo usermod -aG docker ubuntu
-     newgrp docker
-     ```
+Original source files are retained. Default analytical examples and the default invoice/profile are fictional. PDF.js 6.4.299 is Apache-2.0 licensed; its license is vendored with the worker. 
 
-5. **Configure EC2 as a Self-Hosted Runner**
-   - Go to GitHub **Settings** > **Actions** > **Runners** > **New self-hosted runner**.
-   - Choose the operating system and follow the provided commands to set up the runner.
+## Practical limits
 
-6. **Setup GitHub Secrets**
-   - Add the following secrets to your GitHub repository:
-     - `AWS_ACCESS_KEY_ID`
-     - `AWS_SECRET_ACCESS_KEY`
-     - `AWS_REGION`: `ap-south-1`
-     - `AWS_ECR_LOGIN_URI`: `276333489749.dkr.ecr.ap-south-1.amazonaws.com`
-     - `ECR_REPOSITORY_NAME`: `textsummarization`
+Text/context ≤40,000 characters; questions sent to the provider ≤4,000; local documents ≤5 MiB/60 pages; images ≤2 MiB/16 megapixels. Only PNG/JPEG for image analysis. No persistent document store or cross-device history. Source extraction can change reading order in complex PDFs. OCR and AI output require manual verification. Images are analyzed, not generated. No secrets are needed for local functions.
 
-### Notes
-
-- **Docker Image Creation**: Ensure your Dockerfile is correctly set up to build your application image.
-- **IAM User Permissions**: The IAM user must have the necessary permissions to access ECR and EC2 services.
-- **EC2 Configuration**: Verify that Docker is correctly installed and configured on your EC2 instance.
-- **Self-Hosted Runner**: Ensure that the EC2 instance is properly set up as a GitHub Actions self-hosted runner for automated deployments.
-
-### Author
-
-**Subhash Dixit**  
-Data Scientist  
-Email: [subhashdixit17@gmail.com](mailto:subhashdixit17@gmail.com)
+The test suite checks calculation contracts and invalid inputs. It cannot establish that an input dataset is representative, that a heuristic is scientifically correct for every domain, or that a result is suitable for an automated consequential decision. Read the original source alongside the maintained browser implementation when comparing behavior.
