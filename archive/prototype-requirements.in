@@ -1,0 +1,24 @@
+# Historical prototype dependencies: preserved for reference.
+# Supported maintained-release installation and exact locks: DEPENDENCIES.md.
+accelerate==0.34.0
+transformers==4.44.2  # Library by Hugging Face for state-of-the-art natural language processing models (e.g., BERT, GPT).
+transformers[sentencepiece]  # Additional support for SentencePiece tokenization in Hugging Face transformers.
+datasets==2.21.0  # Library by Hugging Face for easily accessing and manipulating datasets for machine learning.
+sacrebleu==2.4.3  # Library for computing BLEU scores, a metric for evaluating the quality of text which has been machine-translated.
+rouge_score==0.1.2  # Library for calculating ROUGE scores, used for evaluating the quality of summaries and text generation.
+py7zr==0.22.0 # Python library for handling 7z archive files (7-Zip format).
+pandas==2.2.2  # Data manipulation and analysis library, providing data structures like DataFrame for handling large datasets.
+nltk==3.9.1 # Natural Language Toolkit, used for working with human language data (text processing, NLP tasks).
+tqdm==4.66.5  # Library for creating progress bars in loops and iterables to visualize the progress of tasks.
+PyYAML==6.0.2 # Library for parsing and writing YAML, a human-readable data serialization standard.
+matplotlib==3.9.2 # Plotting library for creating static, animated, and interactive visualizations in Python.
+torch==2.4.0 # PyTorch library for machine learning and deep learning, providing tools for tensor computation and neural networks.
+notebook==7.2.2 # Jupyter Notebook package for creating and sharing live code, equations, visualizations, and narrative text.
+boto3==1.35.10 # Amazon Web Services (AWS) SDK for Python, allowing interaction with AWS services like S3, DynamoDB, etc.
+mypy-boto3-s3==1.35.2 # Type stubs for boto3 S3, providing type checking for AWS S3 interactions in Python code.
+python-box==6.0.2  # A library for creating and manipulating nested data structures with dot notation access.
+ensure==1.0.2  # Library for ensuring type safety and data validation in Python.
+fastapi==0.78.0  # Modern, fast web framework for building APIs with Python based on standard Python type hints.
+uvicorn==0.18.3  # ASGI server for serving FastAPI and other ASGI-compatible web frameworks.
+Jinja2==3.1.2  # Template engine for rendering templates in web applications, commonly used with Flask and FastAPI.
+-e .  # Editable installation of the current package. This allows you to make changes to the code and have them immediately reflected without reinstalling.
