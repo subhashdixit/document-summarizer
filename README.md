@@ -1,5 +1,8 @@
 # Document Summarizer
 
+**Reproducible versions:** [Dependency versions and exact setup](DEPENDENCIES.md).
+
+
 [Open the application](https://subhashdixit.github.io/document-summarizer/) · [Report an issue](https://github.com/subhashdixit/document-summarizer/issues)
 
 Turn text or a PDF into a traceable extractive summary, with optional on-device open-model generation.

@@ -1,3 +1,5 @@
+# Historical prototype dependencies: preserved for reference.
+# Supported maintained-release installation and exact locks: DEPENDENCIES.md.
 accelerate==0.34.0
 transformers==4.44.2  # Library by Hugging Face for state-of-the-art natural language processing models (e.g., BERT, GPT).
 transformers[sentencepiece]  # Additional support for SentencePiece tokenization in Hugging Face transformers.
