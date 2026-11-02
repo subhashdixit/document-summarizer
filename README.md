@@ -2,7 +2,7 @@
 
 [Open the application](https://subhashdixit.github.io/document-summarizer/) · [Report an issue](https://github.com/subhashdixit/document-summarizer/issues)
 
-Turn text or a PDF into a traceable extractive summary, with optional server-side abstractive generation.
+Turn text or a PDF into a traceable extractive summary, with optional on-device open-model generation.
 
 ## What the finished application does
 
